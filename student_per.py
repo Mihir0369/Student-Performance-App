@@ -3,6 +3,13 @@ import pandas as pd
 import numpy as np
 import pickle
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+
+uri = "mongodb+srv://Mihir0369:Dreamsking0810@cluster0.orxfk.mongodb.net/?appName=Cluster0"
+client = MongoClient(uri, server_api=ServerApi('1'))
+db = client['student_performance_db']
+collection = db["student_prediction"]
 
 def load_model():
     with open('Student_lr_Regression_model.pkl', 'rb') as file:
@@ -31,6 +38,8 @@ def main():
     sample_paper_solved = st.number_input('Sample Question Paper Practiced', min_value=0, max_value=10, value=5)
     
     if st.button("Predict Your Scores"):
+        extra_carr_activity_numeric = 1 if extra_carr_activity == 'Yes' else 0
+
         user_data = {
             'Hours_Studied':hour_studied, 
             'Previous_Scores':previous_score, 
@@ -39,7 +48,16 @@ def main():
             'Sample_Question_Papers_Practiced':sample_paper_solved
         }
         prediction = predict_data(user_data)
-        st.success(f'Your Predicted Score is: {prediction[0][0]}')
+        st.success(f'Your Predicted Score is: {round(prediction[0][0],2)}')
+        new_user_data = {
+            'Hours_Studied':hour_studied, 
+            'Previous_Scores':previous_score, 
+            'Extracurricular_Activities':extra_carr_activity_numeric, 
+            'Sleep_Hours':sleeping_hours,  
+            'Sample_Question_Papers_Practiced':sample_paper_solved,
+            'Prediction': round(float(prediction[0][0]),2)
+        }
+        collection.insert_one(new_user_data)
     
 if __name__ == "__main__":
     main()
